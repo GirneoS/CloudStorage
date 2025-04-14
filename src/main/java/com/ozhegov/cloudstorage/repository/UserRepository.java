@@ -11,4 +11,5 @@ public interface UserRepository extends Repository<StorageUser, Long> {
     boolean existsByName(String name);
     StorageUser save(StorageUser user);
     List<StorageUser> findAll();
+    void deleteAll();
 }

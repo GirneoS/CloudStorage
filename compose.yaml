@@ -6,6 +6,13 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=123456
+  minio:
+    image: 'minio/minio'
+    ports:
+      - "9001:9000"
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=12345678
 
 
   redis:
