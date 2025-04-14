@@ -1,4 +1,4 @@
-package com.ozhegov.cloudstorage;
+package com.ozhegov.cloudstorage.config;
 
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,7 @@ public class DataConfig {
         DriverManagerDataSource managerDataSource = new DriverManagerDataSource();
         managerDataSource.setDriverClassName("org.postgresql.Driver");
         managerDataSource.setUrl("jdbc:postgresql://localhost:5433/postgres");
-        managerDataSource.setPassword("123456");
+        managerDataSource.setPassword(System.getenv("My_Postgres_Pass"));
         managerDataSource.setUsername("postgres");
         return managerDataSource;
     }
