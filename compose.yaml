@@ -13,9 +13,53 @@ services:
     environment:
       - MINIO_ROOT_USER=root
       - MINIO_ROOT_PASSWORD=12345678
-
-
+    volumes:
+      - minio_data:/data
+    command: server /data
+  minio_init:
+    image: 'minio/mc'
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c",
+      "sleep 10 &&
+        mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+        mc mb --ignore-existing myminio/main-bucket"]
+    environment:
+      MINIO_ROOT_USER: root
+      MINIO_ROOT_PASSWORD: 12345678
   redis:
     image: 'redis:latest'
     ports:
       - '6379'
+  kafka:
+    image: apache/kafka:4.0.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"   # контроллер KRaft-listener
+    environment:
+      KAFKA_BROKER_ID: 1
+      # Роли: broker и (в малом кластере) controller
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Слушатели для клиентских (9092) и контроллерских (9093) запросов
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      # Настройки кластера
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Отказ от Zookeeper (KRaft-mode)
+      KAFKA_NODE_ID: 1
+      KAFKA_LOG_DIRS: /kafka/logs
+    volumes:
+      - kafka_data:/kafka/logs
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      retries: 10
+
+
+volumes:
+  kafka_data:
+  minio_data:
