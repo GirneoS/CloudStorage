@@ -1,6 +1,6 @@
 package com.ozhegov.cloudstorage.service;
 
-import com.ozhegov.cloudstorage.model.Blob;
+import com.ozhegov.cloudstorage.dto.Blob;
 import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
 import com.ozhegov.cloudstorage.exception.NoSuchFileException;
 import io.minio.*;

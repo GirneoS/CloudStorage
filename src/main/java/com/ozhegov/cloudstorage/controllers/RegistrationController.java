@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class RegistrationController {
     private RegistrationService registrationService;
-    @PostMapping
+    @PostMapping("/auth/sign-up")
     public String addUser(@RequestBody StorageUser user){
         registrationService.addUser(user);
         return "User " + user.getName() + " has been saved";
     }
+
 }
