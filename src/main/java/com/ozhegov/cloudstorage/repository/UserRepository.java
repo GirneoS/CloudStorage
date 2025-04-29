@@ -1,6 +1,6 @@
 package com.ozhegov.cloudstorage.repository;
 
-import com.ozhegov.cloudstorage.entity.StorageUser;
+import com.ozhegov.cloudstorage.model.StorageUser;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;

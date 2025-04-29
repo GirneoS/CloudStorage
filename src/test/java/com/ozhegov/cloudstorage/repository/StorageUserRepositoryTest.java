@@ -1,9 +1,8 @@
 package com.ozhegov.cloudstorage.repository;
 
-import com.ozhegov.cloudstorage.entity.StorageUser;
+import com.ozhegov.cloudstorage.model.StorageUser;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;

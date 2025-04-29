@@ -1,7 +1,7 @@
 package com.ozhegov.cloudstorage.controllers;
 
-import com.ozhegov.cloudstorage.entity.StorageUser;
-import com.ozhegov.cloudstorage.services.RegistrationService;
+import com.ozhegov.cloudstorage.model.StorageUser;
+import com.ozhegov.cloudstorage.service.RegistrationService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

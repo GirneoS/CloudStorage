@@ -1,7 +1,6 @@
-package com.ozhegov.cloudstorage.entity;
+package com.ozhegov.cloudstorage.model;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Data;
 
 @Entity(name = "Users")

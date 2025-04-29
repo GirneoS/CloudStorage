@@ -1,7 +1,6 @@
 package com.ozhegov.cloudstorage.config;
 
-import com.ozhegov.cloudstorage.services.CustomUserDetailService;
-import lombok.SneakyThrows;
+import com.ozhegov.cloudstorage.service.CustomUserDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;

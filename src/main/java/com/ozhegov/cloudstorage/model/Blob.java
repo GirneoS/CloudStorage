@@ -1,4 +1,4 @@
-package com.ozhegov.cloudstorage.entity;
+package com.ozhegov.cloudstorage.model;
 
 import lombok.Builder;
 import lombok.Data;
@@ -9,5 +9,5 @@ public class Blob {
     private String path;
     private String name;
     private long size;
-    private String type;
+    private String isDir;
 }

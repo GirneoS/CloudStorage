@@ -1,7 +1,7 @@
-package com.ozhegov.cloudstorage.services;
+package com.ozhegov.cloudstorage.service;
 
 import com.ozhegov.cloudstorage.config.CustomUserDetails;
-import com.ozhegov.cloudstorage.entity.StorageUser;
+import com.ozhegov.cloudstorage.model.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
