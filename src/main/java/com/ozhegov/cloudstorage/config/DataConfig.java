@@ -32,7 +32,7 @@ public class DataConfig {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource){
         LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
         emf.setDataSource(dataSource);
-        emf.setPackagesToScan("com.ozhegov.cloudstorage.entity");
+        emf.setPackagesToScan("com.ozhegov.cloudstorage.model");
 
         JpaVendorAdapter hibernateAdapter = new HibernateJpaVendorAdapter();
         emf.setJpaVendorAdapter(hibernateAdapter);

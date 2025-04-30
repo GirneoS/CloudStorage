@@ -1,18 +1,19 @@
 package com.ozhegov.cloudstorage.service;
 
+import com.ozhegov.cloudstorage.dto.AuthRequest;
 import com.ozhegov.cloudstorage.model.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
-public class RegistrationService {
+public class UserService {
     private UserRepository repository;
-    private PasswordEncoder encoder;
-    public void addUser(StorageUser user){
-        user.setPassword(encoder.encode(user.getPassword()));
+    public void registerUser(AuthRequest request) {
+        StorageUser user = new StorageUser();
+        user.setName(request.getName());
+        user.setPassword(request.getPassword());
         repository.save(user);
     }
 }

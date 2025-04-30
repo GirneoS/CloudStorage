@@ -24,7 +24,7 @@ public class FilesController {
     @Autowired
     private FileService service;
     @PostMapping("/directory?path={path}")
-    public ResponseEntity<?> createDirectory(@PathVariable String path){
+    public ResponseEntity<String> createDirectory(@PathVariable String path){
         try {
             Blob blob = service.createDirectory(path);
             String json = (new Gson()).toJson(blob);
@@ -40,7 +40,7 @@ public class FilesController {
         }
     }
     @GetMapping("/directory?path={path}")
-    public ResponseEntity<?> getFilesInDir(@PathVariable String path){
+    public ResponseEntity<String> getFilesInDir(@PathVariable String path){
         try {
             List<Blob> files = service.findAllInDir(path);
             String json = (new Gson()).toJson(files);
@@ -53,7 +53,7 @@ public class FilesController {
         }
     }
     @GetMapping("/resource?path={path}")
-    public ResponseEntity<?> getFileByPath(@PathVariable String path){
+    public ResponseEntity<String> getFileByPath(@PathVariable String path){
         try {
             Blob blob = service.getFile(path);
             String json = (new Gson()).toJson(blob);
@@ -71,7 +71,7 @@ public class FilesController {
         }
     }
     @GetMapping("/resource/download?path={path}")
-    public ResponseEntity<?> downloadFile(@PathVariable String path){
+    public ResponseEntity<Resource> downloadFile(@PathVariable String path){
         try{
             Resource resource = service.downloadFile(path);
 
@@ -86,7 +86,7 @@ public class FilesController {
         }
     }
     @PostMapping("/resource?path={path}")
-    public ResponseEntity<?> uploadFile(@PathVariable String path, @RequestParam MultipartFile file){
+    public ResponseEntity<String> uploadFile(@PathVariable String path, @RequestParam MultipartFile file){
         try{
             Blob blob = service.uploadFile(file, path);
             String json = (new Gson()).toJson(blob);
@@ -101,7 +101,7 @@ public class FilesController {
         }
     }
     @GetMapping("/resource/move?from={from}&to={to}")
-    public ResponseEntity<?> replaceResource(@PathVariable String from, @PathVariable String to){
+    public ResponseEntity<String> replaceResource(@PathVariable String from, @PathVariable String to){
         try{
             Blob blob = service.replaceResource(from, to);
             String json = (new Gson()).toJson(blob);

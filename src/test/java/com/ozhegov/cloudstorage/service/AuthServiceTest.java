@@ -15,9 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         "spring.datasource.url=jdbc:h2:mem:testdb_${random.value};DB_CLOSE_DELAY=-1",
         "spring.jpa.hibernate.ddl-auto=create-drop"
 })
-class RegistrationServiceTest {
+class AuthServiceTest {
     @Autowired
-    RegistrationService service;
+    AuthService service;
     @Autowired
     UserRepository repository;
     @BeforeEach
