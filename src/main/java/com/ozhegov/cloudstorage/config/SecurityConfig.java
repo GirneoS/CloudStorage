@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -39,7 +41,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/config.js", "/assets/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sm -> sm
@@ -48,7 +51,8 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-        ;
+                // Добавить это для обработки CORS, если фронтенд запускается на другом порту
+                .cors(withDefaults());
 
         return http.build();
     }

@@ -66,7 +66,6 @@ public class FileService {
                 throw new NoSuchFileException();
             throw e;
         }
-
         return convertToBlob(stats.object(), stats.size(), path.endsWith("/"));
     }
     public Resource downloadFile(String path) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {

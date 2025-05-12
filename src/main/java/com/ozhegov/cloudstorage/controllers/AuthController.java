@@ -22,14 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @AllArgsConstructor
 public class AuthController {
     private AuthService authService;
     private AuthenticationManager authManager;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<String> signUp(@Validated @RequestBody AuthRequest request, HttpSession session){
+    public ResponseEntity<?> signUp(@Validated @RequestBody AuthRequest request, HttpSession session){
         try {
             UserDTO dto = authService.signUpUser(request);
             String json = new Gson().toJson(dto);
@@ -50,7 +50,7 @@ public class AuthController {
     }
     //здесь мы возьмем пользователя из бд и добавим его в редис
     @PostMapping("/sign-in")
-    public ResponseEntity<String> signIn(@Validated @RequestBody AuthRequest req, HttpSession session) {
+    public ResponseEntity<?> signIn(@Validated @RequestBody AuthRequest req, HttpSession session) {
         Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getName(), req.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
