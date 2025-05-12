@@ -15,21 +15,21 @@ public class AuthService {
     private UserRepository repository;
     private PasswordEncoder encoder;
     public UserDTO signUpUser(AuthRequest request){
-        if(repository.existsByName(request.getName()))
+        if(repository.existsByName(request.getUsername()))
             throw new IllegalArgumentException("User already exists");
         StorageUser user = new StorageUser();
-        user.setName(request.getName());
+        user.setName(request.getUsername());
         user.setPassword(encoder.encode(request.getPassword()));
         user.setRoles("user");
         repository.save(user);
         return new UserDTO(user.getName());
     }
     public UserDTO signInUser(AuthRequest req) throws WrongCredentials {
-        UserDTO dto = new UserDTO(req.getName());
+        UserDTO dto = new UserDTO(req.getUsername());
         req.setPassword(encoder.encode(req.getPassword()));
-        String passDB = repository.findByName(dto.getName()).orElseThrow(WrongCredentials::new).getPassword();
+        String passDB = repository.findByName(dto.getUsername()).orElseThrow(WrongCredentials::new).getPassword();
         if(!passDB.equals(req.getPassword()))
             throw new WrongCredentials();
-        return new UserDTO(req.getName());
+        return new UserDTO(req.getUsername());
     }
 }

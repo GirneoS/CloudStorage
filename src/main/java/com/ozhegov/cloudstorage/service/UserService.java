@@ -12,7 +12,7 @@ public class UserService {
     private UserRepository repository;
     public void registerUser(AuthRequest request) {
         StorageUser user = new StorageUser();
-        user.setName(request.getName());
+        user.setName(request.getUsername());
         user.setPassword(request.getPassword());
         repository.save(user);
     }

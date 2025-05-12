@@ -32,6 +32,7 @@ public class FileService {
     private  String mainBucket;
     public Blob uploadFile(MultipartFile file, String path) throws RuntimeException, IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, FileIsAlreadyExistsException {
         String fullPath = path + file.getName();
+        System.out.println(fullPath);
         InputStream is = file.getInputStream();
         long size = file.getSize();
 
@@ -101,7 +102,6 @@ public class FileService {
                 throw new NoSuchFileException();
             throw e;
         }
-
     }
     public Blob createDirectory(String path) throws NoSuchFileException, ErrorResponseException, ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, FileIsAlreadyExistsException {
         int parentDirIndex = path.substring(0, path.length() - 1).lastIndexOf('/');
@@ -167,7 +167,7 @@ public class FileService {
                 .path(path)
                 .name(name)
                 .size(size)
-                .isDir(file)
+                .type(file)
                 .build();
     }
 

@@ -5,7 +5,11 @@ import com.ozhegov.cloudstorage.config.CustomUserDetails;
 import com.ozhegov.cloudstorage.dto.ErrorMessage;
 import com.ozhegov.cloudstorage.dto.AuthRequest;
 import com.ozhegov.cloudstorage.dto.UserDTO;
+import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
+import com.ozhegov.cloudstorage.exception.NoSuchFileException;
 import com.ozhegov.cloudstorage.service.AuthService;
+import com.ozhegov.cloudstorage.service.FileService;
+import io.minio.errors.*;
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,20 +25,24 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
 @RestController
 @RequestMapping("/api/auth")
 @AllArgsConstructor
 public class AuthController {
     private AuthService authService;
     private AuthenticationManager authManager;
+    private FileService fileService;
 
     @PostMapping("/sign-up")
     public ResponseEntity<?> signUp(@Validated @RequestBody AuthRequest request, HttpSession session){
         try {
             UserDTO dto = authService.signUpUser(request);
-            String json = new Gson().toJson(dto);
 
-            Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getName(),request.getPassword()));
+            Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(),request.getPassword()));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -42,16 +50,20 @@ public class AuthController {
 
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
 
-            return ResponseEntity.status(201).body(json);
+            fileService.createDirectory("user-"+dto.getUsername()+"files/");
+            return ResponseEntity.status(201).body(dto);
         }catch(IllegalArgumentException e){
-            String json = (new Gson()).toJson(new ErrorMessage("User with this name already exists"));
+            String json = (new Gson()).toJson(new ErrorMessage("Пользователь с таким именем уже существует"));
             return ResponseEntity.status(409).body(json);
+        } catch (ServerException | InsufficientDataException | NoSuchFileException | ErrorResponseException |
+                 IOException | NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException |
+                 XmlParserException | InternalException | FileIsAlreadyExistsException e) {
+            return ResponseEntity.status(500).body("Ошибка сервера");
         }
     }
-    //здесь мы возьмем пользователя из бд и добавим его в редис
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signIn(@Validated @RequestBody AuthRequest req, HttpSession session) {
-        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getName(), req.getPassword()));
+    public ResponseEntity<UserDTO> signIn(@Validated @RequestBody AuthRequest req, HttpSession session) {
+        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -62,9 +74,7 @@ public class AuthController {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         UserDTO dto = new UserDTO(userDetails.getUsername());
-        String json = new Gson().toJson(dto);
-
-        return ResponseEntity.ok(new Gson().toJson(json));
+        return ResponseEntity.ok(dto);
     }
 
 }

@@ -9,5 +9,5 @@ public class Blob {
     private String path;
     private String name;
     private long size;
-    private String isDir;
+    private String type;
 }
