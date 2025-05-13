@@ -3,6 +3,7 @@ package com.ozhegov.cloudstorage.service;
 import com.ozhegov.cloudstorage.dto.Blob;
 import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
 import com.ozhegov.cloudstorage.exception.NoSuchFileException;
+import com.ozhegov.cloudstorage.exception.StorageException;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
@@ -20,6 +21,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class FileService {
@@ -30,30 +32,35 @@ public class FileService {
     }
     @Value("${main.bucket}")
     private  String mainBucket;
-    public Blob uploadFile(MultipartFile file, String path) throws RuntimeException, IOException, ServerException, InsufficientDataException, ErrorResponseException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, FileIsAlreadyExistsException {
-        String fullPath = path + file.getName();
+    public Blob uploadFile(MultipartFile file, String path) throws FileIsAlreadyExistsException, StorageException {
+        if(!path.endsWith("/"))
+            path += "/";
+        String fullPath = path + file.getOriginalFilename();
         System.out.println(fullPath);
-        InputStream is = file.getInputStream();
-        long size = file.getSize();
+        try(InputStream is = file.getInputStream()) {
+            long size = file.getSize();
 
-        try {
-            client.statObject(StatObjectArgs.builder()
-                    .bucket(mainBucket)
-                    .object(fullPath)
-                    .build());
-            throw new FileIsAlreadyExistsException();
-        }catch(ErrorResponseException e){
-            if(!e.errorResponse().code().equals("NoSuchKey"))
-                throw e;
+
+            Map<String, String> header = Map.of("If-None-Match", "*");
+            try {
+                client.putObject(PutObjectArgs.builder()
+                        .bucket(mainBucket)
+                        .object(fullPath)
+                        .stream(is, size, -1)
+                        .headers(header)
+                        .contentType(file.getContentType())
+                        .build());
+                return convertToBlob(fullPath, size, !file.getResource().isFile());
+            } catch(ErrorResponseException e){
+                if(e.errorResponse().code().equals("PreconditionFailed"))
+                    throw new FileIsAlreadyExistsException(e.getMessage());
+                throw new StorageException(e.getMessage());
+            }
+        } catch (IOException | InsufficientDataException | InternalException |
+                 InvalidKeyException | InvalidResponseException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
+            throw new StorageException(e.getMessage());
         }
-
-        client.putObject(PutObjectArgs.builder()
-                .bucket(mainBucket)
-                .object(fullPath)
-                .stream(is,size,-1)
-                .contentType(file.getContentType())
-                .build());
-        return convertToBlob(fullPath, size, !file.getResource().isFile());
     }
     public Blob getFile(String path) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
         StatObjectResponse stats = null;
@@ -64,7 +71,7 @@ public class FileService {
                     .build());
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
-                throw new NoSuchFileException();
+                throw new NoSuchFileException(e.getMessage());
             throw e;
         }
         return convertToBlob(stats.object(), stats.size(), path.endsWith("/"));
@@ -99,7 +106,7 @@ public class FileService {
             return convertToBlob(to, stats.headers().size(), to.endsWith("/"));
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
-                throw new NoSuchFileException();
+                throw new NoSuchFileException(e.getMessage());
             throw e;
         }
     }
@@ -110,13 +117,13 @@ public class FileService {
             client.statObject(StatObjectArgs.builder().bucket(mainBucket).object(parentDirPath).build());
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
-                throw new NoSuchFileException();
+                throw new NoSuchFileException(e.getMessage());
             throw e;
         }
         try {
             client.statObject(StatObjectArgs.builder().bucket(mainBucket).build());
-            throw new FileIsAlreadyExistsException();
-        }catch(ErrorResponseException e){}
+            throw new FileIsAlreadyExistsException("This file is already exists");
+        }catch(ErrorResponseException ignored){}
         InputStream is = new ByteArrayInputStream(new byte[0]);
         client.putObject(PutObjectArgs.builder().bucket(mainBucket).object(path).stream(is, 0, -1).build());
         return convertToBlob(path,0,true);
@@ -134,7 +141,7 @@ public class FileService {
             }
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey")){
-                throw new NoSuchFileException();
+                throw new NoSuchFileException(e.getMessage());
             }
             throw e;
         }
@@ -148,7 +155,7 @@ public class FileService {
                     .build());
         }catch (ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
-                throw new NoSuchFileException();
+                throw new NoSuchFileException(e.getMessage());
             throw e;
         }
 

@@ -5,6 +5,7 @@ import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
 import com.ozhegov.cloudstorage.exception.NoSuchFileException;
 import com.ozhegov.cloudstorage.dto.Blob;
 import com.ozhegov.cloudstorage.dto.ErrorMessage;
+import com.ozhegov.cloudstorage.exception.StorageException;
 import com.ozhegov.cloudstorage.model.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import com.ozhegov.cloudstorage.service.FileService;
@@ -108,8 +109,8 @@ public class FilesController {
             throw new RuntimeException();
         }
     }
-    @PostMapping("/resource")
-    public ResponseEntity<String> uploadFile(@RequestParam String path, @RequestParam MultipartFile file){
+    @PostMapping(value="/resource", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadFile(@RequestParam String path, @RequestParam("object") MultipartFile file){
         Long userId = getCurrentUserId();
         if(userId == null)
             return ResponseEntity.status(401).body("Сессия пользователя истекла");
@@ -118,9 +119,7 @@ public class FilesController {
             Blob blob = service.uploadFile(file, path);
             String json = (new Gson()).toJson(blob);
             return ResponseEntity.status(HttpStatus.valueOf(201)).body(json);
-        } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
-                 NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
-                 InternalException e) {
+        } catch (StorageException e) {
             throw new RuntimeException(e);
         } catch (FileIsAlreadyExistsException e) {
             String json = (new Gson()).toJson(new ErrorMessage("File already exists"));
