@@ -1,6 +1,9 @@
 package com.ozhegov.cloudstorage.config;
 
+import com.ozhegov.cloudstorage.repository.UserRepository;
 import com.ozhegov.cloudstorage.service.UserDetailServiceImpl;
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,10 +27,12 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableWebSecurity
 @EnableMethodSecurity
 @EnableRedisHttpSession
+@AllArgsConstructor
 public class SecurityConfig {
+    private UserRepository repository;
     @Bean
     public UserDetailsService userDetailsService(){
-        return new UserDetailServiceImpl();
+        return new UserDetailServiceImpl(repository);
     }
     @Bean
     public AuthenticationProvider authenticationProvider(){
@@ -51,14 +56,12 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                // Добавить это для обработки CORS, если фронтенд запускается на другом порту
-                .cors(withDefaults());
+                .csrf(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg)
-            throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
         return cfg.getAuthenticationManager();
     }
     @Bean

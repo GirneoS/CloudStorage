@@ -106,6 +106,7 @@ public class FilesController {
         } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
                  NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
                  InternalException e) {
+            e.printStackTrace();
             throw new RuntimeException();
         }
     }

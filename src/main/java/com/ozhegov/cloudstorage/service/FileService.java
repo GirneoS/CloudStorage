@@ -7,6 +7,7 @@ import com.ozhegov.cloudstorage.exception.StorageException;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
