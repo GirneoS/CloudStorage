@@ -1,6 +1,6 @@
 package com.ozhegov.cloudstorage.service;
 
-import com.ozhegov.cloudstorage.model.StorageUser;
+import com.ozhegov.cloudstorage.model.entity.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

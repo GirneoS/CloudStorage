@@ -1,4 +1,4 @@
-package com.ozhegov.cloudstorage.exception;
+package com.ozhegov.cloudstorage.model.exception;
 
 import lombok.NoArgsConstructor;
 

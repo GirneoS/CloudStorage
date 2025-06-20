@@ -2,11 +2,12 @@ package com.ozhegov.cloudstorage.controllers;
 
 import com.google.gson.Gson;
 import com.ozhegov.cloudstorage.config.CustomUserDetails;
-import com.ozhegov.cloudstorage.dto.ErrorMessage;
-import com.ozhegov.cloudstorage.dto.AuthRequest;
-import com.ozhegov.cloudstorage.dto.UserDTO;
-import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
-import com.ozhegov.cloudstorage.exception.NoSuchFileException;
+import com.ozhegov.cloudstorage.model.dto.Blob;
+import com.ozhegov.cloudstorage.model.dto.Message;
+import com.ozhegov.cloudstorage.model.dto.AuthRequest;
+import com.ozhegov.cloudstorage.model.dto.UserDTO;
+import com.ozhegov.cloudstorage.model.exception.FileIsAlreadyExistsException;
+import com.ozhegov.cloudstorage.model.exception.NoSuchFileException;
 import com.ozhegov.cloudstorage.service.AuthService;
 import com.ozhegov.cloudstorage.service.FileService;
 import io.minio.errors.*;
@@ -49,15 +50,15 @@ public class AuthController {
             SecurityContext context = SecurityContextHolder.getContext();
 
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-
-            fileService.createDirectory("user-"+dto.getUsername()+"files/");
+            fileService.createUserDirectory("user-" + dto.getUsername() + "-files/");
             return ResponseEntity.status(201).body(dto);
-        }catch(IllegalArgumentException e){
-            String json = (new Gson()).toJson(new ErrorMessage("Пользователь с таким именем уже существует"));
+        }catch(IllegalArgumentException | FileIsAlreadyExistsException e){
+            String json = (new Gson()).toJson(new Message("Пользователь с таким именем уже существует"));
             return ResponseEntity.status(409).body(json);
-        } catch (ServerException | InsufficientDataException | NoSuchFileException | ErrorResponseException |
+        }
+        catch (ServerException | InsufficientDataException | ErrorResponseException |
                  IOException | NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException |
-                 XmlParserException | InternalException | FileIsAlreadyExistsException e) {
+                 XmlParserException | InternalException e) {
             return ResponseEntity.status(500).body("Ошибка сервера");
         }
     }

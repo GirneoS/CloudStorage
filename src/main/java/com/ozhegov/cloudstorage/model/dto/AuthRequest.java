@@ -1,4 +1,4 @@
-package com.ozhegov.cloudstorage.dto;
+package com.ozhegov.cloudstorage.model.dto;
 
 import lombok.Data;
 

@@ -1,7 +1,7 @@
 package com.ozhegov.cloudstorage.service;
 
-import com.ozhegov.cloudstorage.dto.AuthRequest;
-import com.ozhegov.cloudstorage.model.StorageUser;
+import com.ozhegov.cloudstorage.model.dto.AuthRequest;
+import com.ozhegov.cloudstorage.model.entity.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

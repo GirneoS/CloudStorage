@@ -1,20 +1,17 @@
 package com.ozhegov.cloudstorage.controllers;
 
 import com.google.gson.Gson;
-import com.ozhegov.cloudstorage.exception.FileIsAlreadyExistsException;
-import com.ozhegov.cloudstorage.exception.NoSuchFileException;
-import com.ozhegov.cloudstorage.dto.Blob;
-import com.ozhegov.cloudstorage.dto.ErrorMessage;
-import com.ozhegov.cloudstorage.exception.StorageException;
-import com.ozhegov.cloudstorage.model.StorageUser;
+import com.ozhegov.cloudstorage.model.exception.FileIsAlreadyExistsException;
+import com.ozhegov.cloudstorage.model.exception.NoSuchFileException;
+import com.ozhegov.cloudstorage.model.dto.Blob;
+import com.ozhegov.cloudstorage.model.dto.Message;
+import com.ozhegov.cloudstorage.model.exception.StorageException;
+import com.ozhegov.cloudstorage.model.entity.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import com.ozhegov.cloudstorage.service.FileService;
 import io.minio.errors.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +32,8 @@ public class FilesController {
     private UserRepository userRepository;
     @PostMapping("/directory")
     public ResponseEntity<String> createDirectory(@RequestParam String path){
+        path = "user-" + getCurrentUserId() + "-files/" + path;
+        System.out.println(path);
         try {
             Blob blob = service.createDirectory(path);
             String json = (new Gson()).toJson(blob);
@@ -58,6 +57,7 @@ public class FilesController {
             path = "user-" + userId + "-files/" + path;
             List<Blob> files = service.findAllInDir(path);
             String json = (new Gson()).toJson(files);
+//            System.out.println("json на выход: "+json);
             return ResponseEntity.status(200).body(json);
         }catch(NoSuchFileException e){
             return ResponseEntity.status(404).body("Папки по такому пути не существует");
@@ -77,10 +77,10 @@ public class FilesController {
             String json = (new Gson()).toJson(blob);
             return ResponseEntity.status(200).body(json);
         }catch(IllegalArgumentException e) {
-            String json = (new Gson()).toJson(new ErrorMessage("Invalid or empty path"));
+            String json = (new Gson()).toJson(new Message("Invalid or empty path"));
             return ResponseEntity.status(HttpStatus.valueOf(400)).body(json);
         }catch(NoSuchFileException e){
-            String json = (new Gson()).toJson(new ErrorMessage("Resource not found"));
+            String json = (new Gson()).toJson(new Message("Resource not found"));
             return ResponseEntity.status(404).body(json);
         } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
                  NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
@@ -89,25 +89,19 @@ public class FilesController {
         }
     }
     @GetMapping("/resource/download")
-    public ResponseEntity<Resource> downloadFile(@RequestParam String path){
-        Long userId = getCurrentUserId();
-        if(userId == null) {
-            ByteArrayResource empty = new ByteArrayResource(new byte[0]);
-            return ResponseEntity.status(401).body(empty);
-        }
-        path = "user-" + userId + "-files/" + path;
+    public ResponseEntity<?> downloadFile(@RequestParam String path){
         try{
-            Resource resource = service.downloadFile(path);
+            byte[] binaryData = service.downloadFile(path);
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + resource.getFile() + "\"");
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
-            return ResponseEntity.status(HttpStatusCode.valueOf(201)).headers(headers).contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
+            return new ResponseEntity<>(binaryData, headers, HttpStatus.OK);
         } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
                  NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
                  InternalException e) {
             e.printStackTrace();
-            throw new RuntimeException();
+            return ResponseEntity.status(500).build();
         }
     }
     @PostMapping(value="/resource", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -120,26 +114,24 @@ public class FilesController {
             Blob blob = service.uploadFile(file, path);
             String json = (new Gson()).toJson(blob);
             return ResponseEntity.status(HttpStatus.valueOf(201)).body(json);
-        } catch (StorageException e) {
+        } catch (StorageException | ServerException | InsufficientDataException | ErrorResponseException | IOException |
+                 NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
+                 InternalException e) {
             throw new RuntimeException(e);
         } catch (FileIsAlreadyExistsException e) {
-            String json = (new Gson()).toJson(new ErrorMessage("File already exists"));
+            String json = (new Gson()).toJson(new Message("File already exists"));
             return ResponseEntity.status(409).body(json);
         }
     }
     @GetMapping("/resource/move")
     public ResponseEntity<String> replaceResource(@RequestParam String from, @RequestParam String to){
-        Long userId = getCurrentUserId();
-        if(userId == null)
-            return ResponseEntity.status(401).body("Сессия пользователя истекла");
-        to = "user-" + userId + "-files/" + to;
-        from = "user-" + userId + "-files/" + from;
+        System.out.println("перемещение: " + "from=" + from + "; to=" + to);
         try{
             Blob blob = service.replaceResource(from, to);
             String json = (new Gson()).toJson(blob);
             return ResponseEntity.status(200).body(json);
         } catch(NoSuchFileException e) {
-            String json = (new Gson()).toJson(new ErrorMessage("File to replace hasn't been found"));
+            String json = (new Gson()).toJson(new Message("File to replace hasn't been found"));
             return ResponseEntity.status(404).body(json);
         } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
                  NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
@@ -149,12 +141,9 @@ public class FilesController {
     }
     @DeleteMapping("/resource")
     public ResponseEntity<String> deleteFileByPath(@RequestParam String path) {
-        Long userId = getCurrentUserId();
-        if(userId == null)
-            return ResponseEntity.status(401).body("Сессия пользователя истекла");
-        path = "user-" + userId + "-files/" + path;
+        System.out.println("удаление файла, полный путь: " + path);
         try {
-            service.deleteFile(path);
+            service.deleteObject(path);
             return ResponseEntity.status(204).body("Ресурс успешно удален");
         }catch(NoSuchFileException e){
             return ResponseEntity.status(404).body("Указанный ресурс не найден");

@@ -1,10 +1,10 @@
-package com.ozhegov.cloudstorage.dto;
+package com.ozhegov.cloudstorage.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ErrorMessage{
+public class Message {
     private String message;
 }

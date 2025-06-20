@@ -1,6 +1,6 @@
 package com.ozhegov.cloudstorage.config;
 
-import com.ozhegov.cloudstorage.model.StorageUser;
+import com.ozhegov.cloudstorage.model.entity.StorageUser;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

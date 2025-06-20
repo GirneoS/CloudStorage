@@ -1,4 +1,4 @@
-package com.ozhegov.cloudstorage.model;
+package com.ozhegov.cloudstorage.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
