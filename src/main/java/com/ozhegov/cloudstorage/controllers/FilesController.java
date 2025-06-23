@@ -55,7 +55,7 @@ public class FilesController {
             if(userId == null)
                 return ResponseEntity.status(401).body("Сессия пользователя истекла");
             path = "user-" + userId + "-files/" + path;
-            List<Blob> files = service.findAllInDir(path);
+            List<Blob> files = service.getAllInDir(path);
             String json = (new Gson()).toJson(files);
 //            System.out.println("json на выход: "+json);
             return ResponseEntity.status(200).body(json);

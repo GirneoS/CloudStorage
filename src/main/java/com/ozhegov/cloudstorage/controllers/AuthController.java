@@ -50,7 +50,7 @@ public class AuthController {
             SecurityContext context = SecurityContextHolder.getContext();
 
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            fileService.createUserDirectory("user-" + dto.getUsername() + "-files/");
+            fileService.createDirectory("user-" + dto.getUsername() + "-files/");
             return ResponseEntity.status(201).body(dto);
         }catch(IllegalArgumentException | FileIsAlreadyExistsException e){
             String json = (new Gson()).toJson(new Message("Пользователь с таким именем уже существует"));
@@ -58,7 +58,7 @@ public class AuthController {
         }
         catch (ServerException | InsufficientDataException | ErrorResponseException |
                  IOException | NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException |
-                 XmlParserException | InternalException e) {
+                 XmlParserException | InternalException | NoSuchFileException e) {
             return ResponseEntity.status(500).body("Ошибка сервера");
         }
     }
