@@ -10,6 +10,7 @@ import com.ozhegov.cloudstorage.model.entity.StorageUser;
 import com.ozhegov.cloudstorage.repository.UserRepository;
 import com.ozhegov.cloudstorage.service.FileService;
 import io.minio.errors.*;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -25,10 +26,9 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
+@AllArgsConstructor
 public class FilesController {
-    @Autowired
     private FileService service;
-    @Autowired
     private UserRepository userRepository;
     @PostMapping("/directory")
     public ResponseEntity<String> createDirectory(@RequestParam String path){
