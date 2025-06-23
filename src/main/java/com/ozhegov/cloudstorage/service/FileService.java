@@ -86,12 +86,16 @@ public class FileService {
         return replaceFile(from, to);
     }
     public Blob renameDir(String from, String to) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
-        Iterable<Result<Item>> itemsIterator = client.listObjects(ListObjectsArgs.builder().bucket(mainBucket).prefix(from).build());
+        Iterable<Result<Item>> itemsIterator = client.listObjects(ListObjectsArgs.builder()
+                .bucket(mainBucket)
+                .prefix(from)
+                .build());
         long dirSize = 0;
-        int lastSlashId = to.length() - 1;
         for(Result<Item> result : itemsIterator){
             Item item = result.get();
-            replaceFile(item.objectName(), to + item.objectName().substring(lastSlashId));
+            int lastSlashId = item.objectName().lastIndexOf('/');
+            System.out.println("Перемещаем файл: " + item.objectName() + " сюда: " + to + item.objectName().substring(lastSlashId + 1));
+            replaceFile(item.objectName(), to + item.objectName().substring(lastSlashId + 1));
             dirSize += item.size();
         }
         return Utils.convertToBlob(to, dirSize, true);
@@ -164,8 +168,12 @@ public class FileService {
                     .bucket(mainBucket)
                     .prefix(path)
                     .build());
-            for(Result<Item> file: files)
-                deleteSingleFile(file.get().objectName());
+            for(Result<Item> file: files) {
+                String fileName = file.get().objectName();
+                if(fileName.endsWith("/"))
+                    deleteObject(fileName);
+                deleteSingleFile(fileName);
+            }
             return;
         }
         deleteSingleFile(path);
