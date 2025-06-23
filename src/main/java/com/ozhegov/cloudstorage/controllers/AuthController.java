@@ -8,6 +8,7 @@ import com.ozhegov.cloudstorage.model.dto.AuthRequest;
 import com.ozhegov.cloudstorage.model.dto.UserDTO;
 import com.ozhegov.cloudstorage.model.exception.FileIsAlreadyExistsException;
 import com.ozhegov.cloudstorage.model.exception.NoSuchFileException;
+import com.ozhegov.cloudstorage.repository.UserRepository;
 import com.ozhegov.cloudstorage.service.AuthService;
 import com.ozhegov.cloudstorage.service.FileService;
 import io.minio.errors.*;
@@ -37,6 +38,7 @@ public class AuthController {
     private AuthService authService;
     private AuthenticationManager authManager;
     private FileService fileService;
+    private UserRepository userRepository;
 
     @PostMapping("/sign-up")
     public ResponseEntity<?> signUp(@Validated @RequestBody AuthRequest request, HttpSession session){
@@ -50,7 +52,9 @@ public class AuthController {
             SecurityContext context = SecurityContextHolder.getContext();
 
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            fileService.createDirectory("user-" + dto.getUsername() + "-files/");
+
+            long userId = userRepository.findByName(dto.getUsername()).orElseThrow(RuntimeException::new).getId();
+            fileService.createDirectory("user-" + userId + "-files/");
             return ResponseEntity.status(201).body(dto);
         }catch(IllegalArgumentException | FileIsAlreadyExistsException e){
             String json = (new Gson()).toJson(new Message("Пользователь с таким именем уже существует"));

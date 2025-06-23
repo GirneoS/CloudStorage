@@ -21,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class FileService {
@@ -137,6 +138,7 @@ public class FileService {
     //отфильтровать служебный файл ".emptyfolder"
     public List<Blob> getAllInDir(String prefix) throws NoSuchFileException, ErrorResponseException, ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         List<Blob> blobs = new ArrayList<>();
+        Set<String> serviceFiles = Set.of(prefix, prefix + ".emptyfolder", prefix + ".DS_Store");
         Iterable<Result<Item>> files = client.listObjects(ListObjectsArgs.builder()
                 .bucket(mainBucket)
                 .prefix(prefix)
@@ -144,9 +146,7 @@ public class FileService {
         try {
             for (Result<Item> result : files) {
                 Item item = result.get();
-                if(item.objectName().equals(prefix))
-                    return List.of();
-                if(item.objectName().equals(prefix + ".emptyfolder"))
+                if(serviceFiles.contains(item.objectName()))
                     continue;
                 blobs.add(Utils.convertToBlob(item.objectName(), item.size(), item.isDir()));
             }
