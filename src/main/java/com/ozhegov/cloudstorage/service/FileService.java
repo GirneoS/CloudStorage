@@ -1,10 +1,10 @@
 package com.ozhegov.cloudstorage.service;
 
 import com.ozhegov.cloudstorage.model.dto.Blob;
-import com.ozhegov.cloudstorage.model.exception.FileIsAlreadyExistsException;
+import com.ozhegov.cloudstorage.model.exception.ResourceIsAlreadyExistsException;
 import com.ozhegov.cloudstorage.model.exception.NoSuchFileException;
-import com.ozhegov.cloudstorage.model.exception.StorageException;
 import com.ozhegov.cloudstorage.Utils;
+import com.ozhegov.cloudstorage.model.exception.WrapperException;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
@@ -32,7 +32,7 @@ public class FileService {
     }
     @Value("${main.bucket}")
     private String mainBucket;
-    public Blob uploadFile(MultipartFile file, String path) throws FileIsAlreadyExistsException, StorageException, ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, ErrorResponseException {
+    public Blob uploadFile(MultipartFile file, String path) {
         if(!path.endsWith("/"))
             path += "/";
         String fullPath = path + file.getOriginalFilename();
@@ -52,12 +52,15 @@ public class FileService {
                 return Utils.convertToBlob(fullPath, size, !file.getResource().isFile());
             } catch(ErrorResponseException e){
                 if(e.errorResponse().code().equals("PreconditionFailed"))
-                    throw new FileIsAlreadyExistsException(e.getMessage());
-                throw new StorageException(e.getMessage());
+                    throw new ResourceIsAlreadyExistsException(e.getMessage());
+                throw new WrapperException(e.getMessage());
             }
+        } catch (IOException | InsufficientDataException | InternalException | InvalidKeyException |
+                 InvalidResponseException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
+            throw new WrapperException(e.getMessage());
         }
     }
-    public Blob getFile(String path) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
+    public Blob getFile(String path) {
         StatObjectResponse stats = null;
         try {
             stats = client.statObject(StatObjectArgs.builder()
@@ -67,40 +70,51 @@ public class FileService {
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
                 throw new NoSuchFileException(e.getMessage());
-            throw e;
+            throw new WrapperException(e.getMessage());
+        } catch (ServerException | InsufficientDataException | IOException | NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException | InternalException | NoSuchFileException e){
+            throw  new WrapperException(e.getMessage());
         }
         return Utils.convertToBlob(stats.object(), stats.size(), path.endsWith("/"));
     }
-    public byte[] downloadFile(String path) throws ServerException, InsufficientDataException, ErrorResponseException, IOException,
-            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+    public byte[] downloadFile(String path) {
         try(InputStream isFile = client.getObject(GetObjectArgs.builder()
                 .bucket(mainBucket)
                 .object(path)
                 .build())) {
             return isFile.readAllBytes();
+        } catch (IOException | ErrorResponseException | InsufficientDataException | InternalException |
+                 InvalidKeyException | InvalidResponseException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
+            throw new WrapperException(e.getMessage());
         }
     }
-    public Blob replaceResource(String from, String to) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
-        if(from.endsWith("/"))
+    public Blob replaceResource(String from, String to) {
+        if (from.endsWith("/"))
             return renameDir(from, to);
         return replaceFile(from, to);
     }
-    public Blob renameDir(String from, String to) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
+    public Blob renameDir(String from, String to) {
         Iterable<Result<Item>> itemsIterator = client.listObjects(ListObjectsArgs.builder()
                 .bucket(mainBucket)
                 .prefix(from)
                 .build());
         long dirSize = 0;
-        for(Result<Item> result : itemsIterator){
-            Item item = result.get();
-            int lastSlashId = item.objectName().lastIndexOf('/');
-            System.out.println("Перемещаем файл: " + item.objectName() + " сюда: " + to + item.objectName().substring(lastSlashId + 1));
-            replaceFile(item.objectName(), to + item.objectName().substring(lastSlashId + 1));
-            dirSize += item.size();
+        try{
+            for(Result<Item> result : itemsIterator){
+                Item item = result.get();
+                int lastSlashId = item.objectName().lastIndexOf('/');
+                System.out.println("Перемещаем файл: " + item.objectName() + " сюда: " + to + item.objectName().substring(lastSlashId + 1));
+                replaceFile(item.objectName(), to + item.objectName().substring(lastSlashId + 1));
+                dirSize += item.size();
+            }
+        } catch (ServerException | InsufficientDataException | ErrorResponseException | IOException |
+                 NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
+                 InternalException e) {
+            throw new WrapperException(e.getMessage());
         }
         return Utils.convertToBlob(to, dirSize, true);
     }
-    public Blob replaceFile(String from, String to) throws NoSuchFileException, ErrorResponseException, InsufficientDataException, InternalException, InvalidKeyException, InvalidResponseException, IOException, NoSuchAlgorithmException, ServerException, XmlParserException {
+    public Blob replaceFile(String from, String to) {
         try {
             client.copyObject(CopyObjectArgs.builder()
                     .bucket(mainBucket)
@@ -122,13 +136,17 @@ public class FileService {
         }catch(ErrorResponseException e){
             if(e.errorResponse().code().equals("NoSuchKey"))
                 throw new NoSuchFileException(e.getMessage());
-            throw e;
+            throw new WrapperException(e.getMessage());
+        } catch (ServerException | InsufficientDataException | IOException |
+                 NoSuchAlgorithmException | InvalidKeyException | InvalidResponseException | XmlParserException |
+                 InternalException e) {
+            throw new WrapperException(e.getMessage());
         }
     }
-    public Blob createDirectory(String path) throws NoSuchFileException, ErrorResponseException, ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, FileIsAlreadyExistsException {
+    public Blob createDirectory(String path) {
         path += ".emptyfolder";
         if(doesDirExist(path)){
-            throw new FileIsAlreadyExistsException("This directory is already exists");
+            throw new ResourceIsAlreadyExistsException("This directory is already exists");
         }
         try(InputStream is = new ByteArrayInputStream(new byte[0])) {
             client.putObject(PutObjectArgs.builder()
@@ -137,10 +155,13 @@ public class FileService {
                     .stream(is, 0, -1)
                     .build());
             return Utils.convertToBlob(path, 0, true);
+        } catch (IOException | ErrorResponseException | InsufficientDataException | InternalException |
+                 InvalidKeyException | InvalidResponseException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
+            throw new WrapperException(e.getMessage());
         }
     }
-    //отфильтровать служебный файл ".emptyfolder"
-    public List<Blob> getAllInDir(String prefix) throws NoSuchFileException, ErrorResponseException, ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+    public List<Blob> getAllInDir(String prefix) {
         List<Blob> blobs = new ArrayList<>();
         Set<String> serviceFiles = Set.of(prefix, prefix + ".emptyfolder", prefix + ".DS_Store");
         Iterable<Result<Item>> files = client.listObjects(ListObjectsArgs.builder()
@@ -158,32 +179,47 @@ public class FileService {
             if(e.errorResponse().code().equals("NoSuchKey")){
                 throw new NoSuchFileException(e.getMessage());
             }
-            throw e;
+            throw new WrapperException(e.getMessage());
+        }catch(InsufficientDataException | InternalException | InvalidKeyException |
+                InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e){
+            throw new WrapperException(e.getMessage());
         }
         return blobs;
     }
-    public void deleteObject(String path) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException {
-        if(path.endsWith("/")){
-            Iterable<Result<Item>> files = client.listObjects(ListObjectsArgs.builder()
-                    .bucket(mainBucket)
-                    .prefix(path)
-                    .build());
-            for(Result<Item> file: files) {
-                String fileName = file.get().objectName();
-                if(fileName.endsWith("/"))
-                    deleteObject(fileName);
-                deleteSingleFile(fileName);
+    public void deleteObject(String path) {
+        try {
+            if (path.endsWith("/")) {
+                Iterable<Result<Item>> files = client.listObjects(ListObjectsArgs.builder()
+                        .bucket(mainBucket)
+                        .prefix(path)
+                        .build());
+                for (Result<Item> file : files) {
+                    String fileName = file.get().objectName();
+                    if (fileName.endsWith("/"))
+                        deleteObject(fileName);
+                    deleteSingleFile(fileName);
+                }
+                return;
             }
-            return;
+            deleteSingleFile(path);
+        }catch (IOException | ErrorResponseException | InsufficientDataException | InternalException |
+                InvalidKeyException | InvalidResponseException | NoSuchAlgorithmException | ServerException |
+                XmlParserException e) {
+            throw new WrapperException(e.getMessage());
         }
-        deleteSingleFile(path);
     }
-    private void deleteSingleFile(String path) throws ServerException, InsufficientDataException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, NoSuchFileException, ErrorResponseException {
-        if(doesDirExist(path))
-            client.removeObject(RemoveObjectArgs.builder()
-                .bucket(mainBucket)
-                .object(path)
-                .build());
+    private void deleteSingleFile(String path) {
+        try {
+            if (doesDirExist(path))
+                client.removeObject(RemoveObjectArgs.builder()
+                        .bucket(mainBucket)
+                        .object(path)
+                        .build());
+        } catch (IOException | ErrorResponseException | InsufficientDataException | InternalException |
+                 InvalidKeyException | InvalidResponseException | NoSuchAlgorithmException | ServerException |
+                 XmlParserException e) {
+            throw new WrapperException(e.getMessage());
+        }
     }
     private boolean doesDirExist(String path){
         try{
@@ -193,10 +229,10 @@ public class FileService {
             if(e.errorResponse().code().equals("NoSuchKey"))
                 return false;
 
-            throw new RuntimeException();
+            throw new WrapperException(e.getMessage());
         }catch(InsufficientDataException | InternalException | InvalidKeyException |
                InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e){
-            throw new RuntimeException();
+            throw new WrapperException(e.getMessage());
         }
     }
 }
