@@ -21,11 +21,10 @@
    cd CloudStorage
 ```
 2. В корневой директории проекта выполнить команду:
-
 ```bash
   docker-compose up
 ```
-3. Соберите и запустите приложение:
+3. Собрать и запустить приложение:
 ```bash
   ./mvnw clean package
   cd target
